@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>31 Day Dashboard (A4)</title>
+
+  <meta name="theme-color" content="#111" />
+  <link rel="manifest" href="manifest.webmanifest" />
+
+  <style>
+    :root{
+      --ink:#111;
+      --grid:#4a4a4a;     /* darker */
+      --gridSoft:#8f8f8f; /* grid */
+      --lite:#f2f2f2;
+      --paper:#fff;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:#eee;
+      font-family: Arial, Helvetica, sans-serif;
+      color:var(--ink);
+    }
+
+    .page{
+      width:210mm;
+      min-height:297mm;
+      margin:12px auto;
+      background:var(--paper);
+      padding:10mm 10mm 8mm;
+      box-shadow:0 2px 18px rgba(0,0,0,.12);
+    }
+
+    @media print{
+      @page { size: A4; margin: 0; }
+      body{background:#fff}
+      .page{
+        margin:0;
+        box-shadow:none;
+        min-height:auto;
+        page-break-after:always;
+      }
+      .controls{display:none !important;}
+    }
+
+    .topbar{
+      display:grid;
+      grid-template-columns:1fr 1.6fr 1fr;
+      align-items:center;
+      font-size:11px;
+      margin-bottom:6px;
+    }
+    .topbar .left{font-weight:700}
+    .topbar .center{justify-self:center; font-weight:700}
+    .topbar .right{justify-self:end; font-style:italic}
+
+    .title{
+      text-align:center;
+      margin:2px 0 10px;
+      font-weight:700;
+      font-size:14px;
+    }
+    .rule{ border-top:1px solid #999; margin:6px 0 10px; }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+    }
+    th, td{
+      border:1px solid var(--grid);
+      padding:0;
+      text-align:center;
+      height:22px;
+      font-size:10px;
+      user-select:none;
+    }
+    thead th{
+      background:var(--lite);
+      font-weight:700;
+      height:20px;
+      font-size:9px;
+    }
+
+    .row-num{
+      width:28px;
+      font-weight:700;
+      font-size:10px;
+      text-align:left;
+      padding-left:6px;
+    }
+    .habit-col{
+      width:120px;
+      text-align:left;
+      padding-left:6px;
+      font-weight:700;
+      font-size:10px;
+      white-space:nowrap;
+    }
+
+    /* remove vertical line between number and habit text */
+    th.row-num, td.row-num{ border-right:none; }
+    th.habit-col, td.habit-col{ border-left:none; }
+
+    .section{ margin-top:12px; }
+    .section h3{
+      margin:10px 0 6px;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .note{
+      margin-top:6px;
+      font-size:10px;
+      display:flex;
+      gap:6px;
+      align-items:flex-end;
+    }
+    .note .line{
+      flex:1;
+      border-bottom:1px solid var(--grid);
+      height:14px;
+    }
+
+    .disabled{ background:#fafafa; color:#bbb; }
+
+    .controls{
+      width:210mm;
+      margin:0 auto;
+      padding:10px 10mm 0;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+    }
+    .controls .group{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      font-size:12px;
+      color:#222;
+    }
+    .controls input{
+      padding:6px 8px;
+      border:1px solid #bbb;
+      border-radius:8px;
+      font-size:12px;
+      background:#fff;
+    }
+    .btn{
+      border:1px solid #111;
+      background:#111;
+      color:#fff;
+      padding:7px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:12px;
+    }
+    .btn.secondary{ background:#fff; color:#111; }
+
+    .graph-wrap{
+      border:1px solid var(--grid);
+      padding:6px;
+    }
+    .graph-sub{
+      font-size:10px;
+      color:#222;
+      margin:2px 0 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="controls">
+    <div class="group">
+      <label for="month">Month:</label>
+      <input id="month" type="month" />
+      <button class="btn secondary" type="button" onclick="render()">Update</button>
+    </div>
+    <div class="group">
+      <button class="btn" type="button" onclick="window.print()">Print / Save PDF</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="topbar">
+      <div class="left" id="topLeft">Dec 2025</div>
+      <div class="center">Getting 1% Better Each Day</div>
+      <div class="right" id="topRight">@YourHandle</div>
+    </div>
+
+    <div class="rule"></div>
+    <div class="title">31 Day Dashboard</div>
+
+    <!-- HABIT DASHBOARD -->
+    <table aria-label="31 Day Habit Dashboard">
+      <thead>
+        <tr id="daysRow">
+          <th class="habit-col" colspan="2">Habit/Rules</th>
+        </tr>
+        <tr id="dowRow">
+          <th class="row-num"></th>
+          <th class="habit-col"></th>
+        </tr>
+      </thead>
+
+      <tbody id="habitBody"></tbody>
+
+      <tfoot>
+        <tr id="totalRow">
+          <th class="habit-col" colspan="2" style="text-align:left;padding-left:6px;background:var(--lite);">Total Points</th>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- SLEEP LINE CHART TEMPLATE -->
+    <div class="section">
+      <h3>Sleep (Line Chart)</h3>
+      <div class="graph-wrap">
+        <div class="graph-sub">Draw a line (1–12) across days.</div>
+        <svg id="sleepSvg" width="100%" height="210" viewBox="0 0 1000 210" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="note">
+        <strong>Note:</strong>
+        <div class="line"></div>
+      </div>
+    </div>
+
+    <!-- STUDY LINE CHART TEMPLATE -->
+    <div class="section">
+      <h3>Study (Line Chart)</h3>
+      <div class="graph-wrap">
+        <div class="graph-sub">Draw a line (1–12) across days.</div>
+        <svg id="studySvg" width="100%" height="210" viewBox="0 0 1000 210" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="note">
+        <strong>Note:</strong>
+        <div class="line"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
